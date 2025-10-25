@@ -2,6 +2,13 @@ package Ejercicio1;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.PriorityQueue;
+import java.util.Comparator;
+import java.util.Collections;
 
 public class Graph {
     private List<Node> nodes;
@@ -93,6 +100,76 @@ public class Graph {
             addEdge(from.getName(), to.getName(), peso);
 
             totalIntentos++;
+        }
+    }
+
+    public void dijkstra(String startNodeName) {
+        Node source = getNode(startNodeName);
+        if (source == null) {
+            System.out.println("El nodo inicial no existe.");
+            return;
+        }
+
+        // 1. Estructuras de datos
+        // Guarda la distancia más corta encontrada *hasta ahora* desde source a cada nodo
+        Map<Node, Integer> distances = new HashMap<>();
+        // Guarda el nodo "anterior" en el camino más corto
+        Map<Node, Node> predecessors = new HashMap<>();
+        // Nodos para los que ya hemos encontrado la distancia final (visitados)
+        Set<Node> visited = new HashSet<>();
+        // Cola de prioridad para obtener siempre el nodo no visitado con la menor distancia
+        PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(distances::get));
+
+        // 2. Inicialización
+        // Distancia a todos es "Infinito", excepto el nodo de inicio (source)
+        for (Node node : nodes) {
+            distances.put(node, Integer.MAX_VALUE);
+            predecessors.put(node, null);
+        }
+        distances.put(source, 0); // Distancia a sí mismo es 0
+
+        // 3. Empezar el algoritmo
+        pq.add(source);
+
+        while (!pq.isEmpty()) {
+            // 4. Obtener el nodo (u) no visitado con la menor distancia
+            Node u = pq.poll();
+
+            // Si ya lo visitamos (encontramos su camino final), lo saltamos
+            if (visited.contains(u)) {
+                continue;
+            }
+            // Marcar como visitado (distancia final encontrada)
+            visited.add(u);
+
+            // 5. Relajación: Revisar todos los vecinos (v) de (u)
+            // (Buscamos todas las aristas que *salen* de u)
+            for (Edge edge : edges) {
+                if (edge.getFrom().equals(u)) {
+                    Node v = edge.getTo();
+                    int weight = edge.getWeight();
+
+                    // Si v ya fue visitado (distancia final), no hay nada que hacer
+                    if (visited.contains(v)) {
+                        continue;
+                    }
+
+                    // 6. Calcular la nueva distancia a (v) pasando por (u)
+                    int newDist = distances.get(u) + weight;
+
+                    // 7. Si es un camino más corto que el que teníamos...
+                    if (newDist < distances.get(v)) {
+                        // ...actualizamos la distancia y el predecesor
+                        distances.put(v, newDist);
+                        predecessors.put(v, u);
+                        
+                        // Añadimos 'v' a la cola para procesarlo.
+                        // (Java PQ no tiene 'decreaseKey', pero re-añadir funciona
+                        // gracias al chequeo de 'visited' al inicio del bucle)
+                        pq.add(v);
+                    }
+                }
+            }
         }
     }
 
