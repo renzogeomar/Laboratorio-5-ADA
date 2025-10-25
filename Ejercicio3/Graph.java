@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.PriorityQueue;
-import java.util.Comparator;
 import java.util.Collections;
 
 public class Graph {
@@ -103,6 +99,101 @@ public class Graph {
         }
     }
 
+    public void bellmanFord(String startNodeName) {
+        Node source = getNode(startNodeName);
+        if (source == null) {
+            System.out.println("El nodo inicial no existe.");
+            return;
+        }
+
+        // 1. Estructuras de datos
+        Map<Node, Integer> distances = new HashMap<>();
+        Map<Node, Node> predecessors = new HashMap<>();
+        int numNodes = nodes.size();
+
+        // 2. Inicialización
+        // Distancia a todos es "Infinito", excepto el nodo de inicio (source)
+        for (Node node : nodes) {
+            distances.put(node, Integer.MAX_VALUE);
+            predecessors.put(node, null);
+        }
+        distances.put(source, 0); // Distancia a sí mismo es 0
+
+        // 3. Relajación (V-1 iteraciones)
+        // Repetimos el proceso V-1 veces (V = número de nodos)
+        for (int i = 1; i < numNodes; i++) {
+            boolean changedInThisIteration = false;
+            // En cada iteración, revisamos TODAS las aristas
+            for (Edge edge : edges) {
+                Node u = edge.getFrom();
+                Node v = edge.getTo();
+                int weight = edge.getWeight();
+
+                // Si 'u' es alcanzable (distancia no es infinito)
+                // Y encontramos un camino más corto a 'v' pasando por 'u'
+                if (distances.get(u) != Integer.MAX_VALUE && distances.get(u) + weight < distances.get(v)) {
+                    distances.put(v, distances.get(u) + weight);
+                    predecessors.put(v, u);
+                    changedInThisIteration = true;
+                }
+            }
+            
+            // Optimización: Si en una iteración completa no hubo cambios,
+            // ya encontramos los caminos más cortos y podemos parar.
+            if (!changedInThisIteration) {
+                // System.out.println("Terminación temprana en iteración: " + i);
+                break;
+            }
+        }
+
+        // 4. Detección de Ciclos Negativos
+        // Hacemos una iteración MÁS (la V-ésima iteración)
+        boolean negativeCycleFound = false;
+        for (Edge edge : edges) {
+            Node u = edge.getFrom();
+            Node v = edge.getTo();
+            int weight = edge.getWeight();
+
+            // Si después de V-1 iteraciones, todavía podemos encontrar un camino más corto,
+            // significa que hay un ciclo de peso negativo.
+            if (distances.get(u) != Integer.MAX_VALUE && distances.get(u) + weight < distances.get(v)) {
+                negativeCycleFound = true;
+                System.out.println("¡Ciclo de peso negativo detectado!");
+                // Opcionalmente, se podría marcar 'v' como inalcanzable o con -infinito
+                // distances.put(v, Integer.MIN_VALUE); 
+                break; // Un ciclo es suficiente para detenernos
+            }
+        }
+
+        // 5. Mostrar resultados
+        System.out.println("--- Resultados de Bellman-Ford (desde " + source + ") ---");
+        if (negativeCycleFound) {
+            System.out.println("El grafo contiene un ciclo de peso negativo.");
+            System.out.println("Las distancias más cortas no están bien definidas (pueden ser -infinito).");
+        } 
+        else {
+            // Si no hay ciclos, mostramos los resultados (igual que en Dijkstra)
+            System.out.println("Distancias más cortas:");
+            for (Node node : nodes) {
+                int dist = distances.get(node);
+                if (dist == Integer.MAX_VALUE) {
+                    System.out.println("  " + node + ": Inalcanzable");
+                } else {
+                    System.out.println("  " + node + ": " + dist);
+                }
+            }
+            
+            System.out.println("\nCaminos más cortos:");
+            // Imprimir el camino a todos los demás nodos
+            for (Node node : nodes) {
+                if (!node.equals(source)) {
+                    // Reutilizamos el método auxiliar de Dijkstra
+                    printShortestPath(node.getName(), predecessors, distances);
+                }
+            }
+        }
+        System.out.println("----------------------------------------------");
+    }
 
     private void printShortestPath(String endNodeName, Map<Node, Node> predecessors, Map<Node, Integer> distances) {
         Node target = getNode(endNodeName);
