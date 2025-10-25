@@ -159,11 +159,11 @@ public class Graph {
 
                     // 7. Si es un camino más corto que el que teníamos...
                     if (newDist < distances.get(v)) {
-                        // ...actualizamos la distancia y el predecesor
+                        // Se actualzia la distancia y el predecesor
                         distances.put(v, newDist);
                         predecessors.put(v, u);
                         
-                        // Añadimos 'v' a la cola para procesarlo.
+                        // Se añade 'v' a la cola para procesarlo.
                         // (Java PQ no tiene 'decreaseKey', pero re-añadir funciona
                         // gracias al chequeo de 'visited' al inicio del bucle)
                         pq.add(v);
@@ -171,6 +171,60 @@ public class Graph {
                 }
             }
         }
+        // 8. Mostrar resultados
+        System.out.println("--- Resultados de Dijkstra (desde " + source + ") ---");
+        System.out.println("Distancias más cortas:");
+        for (Node node : nodes) {
+            int dist = distances.get(node);
+            if (dist == Integer.MAX_VALUE) {
+                System.out.println("  " + node + ": Inalcanzable");
+            } else {
+                System.out.println("  " + node + ": " + dist);
+            }
+        }
+        
+        System.out.println("\nCaminos más cortos:");
+        // Imprimir el camino a todos los demás nodos
+        for (Node node : nodes) {
+            if (!node.equals(source)) {
+                printShortestPath(node.getName(), predecessors, distances);
+            }
+        }
+        System.out.println("----------------------------------------------");
     }
+
+    private void printShortestPath(String endNodeName, Map<Node, Node> predecessors, Map<Node, Integer> distances) {
+        Node target = getNode(endNodeName);
+        if (target == null) return; // No debería pasar si se llama desde dijkstra
+
+        int distance = distances.get(target);
+        if (distance == Integer.MAX_VALUE) {
+            System.out.println("  No hay camino a " + target);
+            return;
+        }
+
+        // Reconstruir el camino yendo "hacia atrás"
+        List<Node> path = new ArrayList<>();
+        Node current = target;
+        while (current != null) {
+            path.add(current);
+            current = predecessors.get(current); // Ir al nodo anterior
+        }
+        
+        // El camino está al revés (Target -> ... -> Source), lo invertimos
+        Collections.reverse(path);
+
+        // Imprimir
+        System.out.print("  A " + target + " (Costo: " + distance + "): ");
+        for (int i = 0; i < path.size(); i++) {
+            System.out.print(path.get(i));
+            if (i < path.size() - 1) {
+                System.out.print(" -> ");
+            }
+        }
+        System.out.println(); // Salto de línea
+    }
+
+    
 
 }
