@@ -1,77 +1,91 @@
 package Ejercicio4;
-
-import java.util.concurrent.TimeUnit;
-
 public class ejercicio4 {
     public static void main(String[] args) {
-        // --- Resultados de Dijkstra/Bellman-Ford son impresos en consola ---
-        // --- Podemos desactivarlos para limpiar la salida de la medición ---
-        // (Para esta prueba, simplemente mediremos el tiempo, 
-        // aunque los métodos impriman sus resultados)
+        System.out.println("Iniciando Pruebas de Rendimiento de Algoritmos de Grafos...");
+        
+        // --- Caso 1: Grafo Pequeño y Denso ---
+        // Floyd-Warshall (V^3) debería ser aceptable.
+        runTest(50, 1000, true); // V=50, E=1000
 
-        // Define los tamaños de grafos a probar: {Nodos, Aristas}
-        int[][] sizes = {
-            {10, 20},
-            {50, 150},
-            {100, 300},
-            {200, 800},
-            {400, 2000} // Floyd-Warshall (V^3) empezará a ser muy lento aquí
-            // {500, 5000} // Descomenta para ver diferencias más grandes
-        };
+        // --- Caso 2: Grafo Mediano y Disperso ---
+        // Dijkstra (E*logV) y Bellman (V*E) deberían ser mucho más rápidos que Floyd (V^3).
+        runTest(300, 1500, true); // V=300, E=1500
 
-        System.out.println("Iniciando comparación de tiempos de ejecución...");
-        System.out.println("(Los resultados de cada algoritmo se imprimirán durante la ejecución)");
-        System.out.println("----------------------------------------------------------------------");
-        System.out.printf("%-10s | %-12s | %-15s | %-15s | %-15s\n", 
-                          "Nodos (V)", "Aristas (E)", "Dijkstra (ms)", "Bellman-Ford (ms)", "Floyd-Warshall (ms)");
-        System.out.println("----------------------------------------------------------------------");
+        // --- Caso 3: Grafo Mediano y Denso ---
+        // Bellman (V*E) se vuelve costoso. Floyd (V^3) también.
+        runTest(300, 20000, true); // V=300, E=20000
 
-        for (int[] size : sizes) {
-            int numNodes = size[0];
-            int numEdges = size[1];
+        // --- Caso 4: Grafo Grande y Disperso ---
+        // Floyd-Warshall (V^3) será MUY lento.
+        // Dijkstra será el más rápido.
+        runTest(800, 2000, true); // V=800, E=2000
 
-            // 1. Generar el grafo
-            // (Usamos el mismo grafo para los 3 algoritmos)
-            Graph graph = new Graph();
-            graph.generarGrafoAleatorio(numNodes, numEdges, true); // true = ponderado
+        // --- Caso 5: Grafo Grande y Denso (Solo para mostrar la diferencia) ---
+        // ¡¡PRECAUCIÓN!! Floyd-Warshall puede tardar MUCHO aquí (800^3 operaciones).
+        // runTest(800, 100000, true); // V=800, E=100000
+    }
 
-            // --- 2. Medir Dijkstra ---
-            long startTime = System.nanoTime();
-            graph.dijkstra("N0", false); // Siempre desde el nodo N0
-            long endTime = System.nanoTime();
-            long dijkstraTime = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
+    /**
+     * Ejecuta una prueba para un tamaño de grafo específico.
+     * @param numNodos (V)
+     * @param numAristas (E)
+     * @param ponderado Genera pesos positivos (1-9)
+     */
+    public static void runTest(int numNodos, int numAristas, boolean ponderado) {
+        System.out.println("\n---------------------------------------------------------");
+        System.out.printf("--- INICIO TEST: (Nodos V=%d, Aristas E=%d) ---\n", numNodos, numAristas);
 
-            // --- 3. Medir Bellman-Ford ---
+        // 1. Generar el grafo
+        Graph g = new Graph();
+        // Usamos pesos positivos. Dijkstra funciona, Bellman y Floyd también.
+        g.generarGrafoAleatorio(numNodos, numAristas, ponderado); 
+        String startNode = "N0"; // Nodo inicial para Dijkstra y Bellman-Ford
+
+        long startTime, endTime, duration;
+
+        // 2. Medir Dijkstra (Single-Source)
+        try {
             startTime = System.nanoTime();
-            graph.bellmanFord("N0", false); // Siempre desde el nodo N0
+            g.dijkstra(startNode);
             endTime = System.nanoTime();
-            long bellmanTime = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
-
-            // --- 4. Medir Floyd-Warshall ---
-            startTime = System.nanoTime();
-            
-            // 4a. Convertir el Graph a la estructura de FloydWarshall
-            // (Esta conversión es parte del "costo" de usar Floyd-Warshall aquí)
-            Node[] nodesArray = graph.getNodes().toArray(new Node[0]);
-            FloydWarshall fw = new FloydWarshall(nodesArray);
-            
-            // 4b. Llenar la matriz de adyacencia
-            for (Edge edge : graph.getEdges()) {
-                fw.addEdge(edge.getFrom(), edge.getTo(), edge.getWeight());
-            }
-            
-            // 4c. Ejecutar el algoritmo
-            fw.computeShortestPaths();
-            
-            endTime = System.nanoTime();
-            long floydTime = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
-            
-            // Imprimir la fila de tiempos
-            System.out.printf("%-10d | %-12d | %-15d | %-15d | %-15d\n", 
-                              numNodes, numEdges, dijkstraTime, bellmanTime, floydTime);
+            duration = endTime - startTime;
+            printTime("Dijkstra (1-fuente)", duration);
+        } catch (Exception e) {
+            System.out.println("Error en Dijkstra: " + e.getMessage());
         }
-        System.out.println("----------------------------------------------------------------------");
-        System.out.println("Prueba completada.");
+
+        // 3. Medir Bellman-Ford (Single-Source)
+        try {
+            startTime = System.nanoTime();
+            g.bellmanFord(startNode);
+            endTime = System.nanoTime();
+            duration = endTime - startTime;
+            printTime("Bellman-Ford (1-fuente)", duration);
+        } catch (Exception e) {
+            System.out.println("Error en Bellman-Ford: " + e.getMessage());
+        }
+
+        // 4. Medir Floyd-Warshall (All-Pairs)
+        try {
+            startTime = System.nanoTime();
+            g.floydWarshall();
+            endTime = System.nanoTime();
+            duration = endTime - startTime;
+            printTime("Floyd-Warshall (Todos-contra-Todos)", duration);
+        } catch (Exception e) {
+            System.out.println("Error en Floyd-Warshall: " + e.getMessage());
+        }
+        
+        System.out.printf("--- FIN TEST: (V=%d, E=%d) ---\n", numNodos, numAristas);
+        System.out.println("---------------------------------------------------------");
+    }
+
+    /**
+     * Imprime el tiempo de ejecución en milisegundos.
+     */
+    private static void printTime(String algorithm, long nanos) {
+        double millis = nanos / 1_000_000.0;
+        System.out.printf("  %-35s: %.4f ms\n", algorithm, millis);
     }
 }
 

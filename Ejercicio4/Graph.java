@@ -112,74 +112,50 @@ public class Graph {
         }
     }
 
-    public Map<Node, Integer> bellmanFord(String startNodeName, Map<Node, Node> predecessors) {
+    public Map<Node, Integer> bellmanFord(String startNodeName) {
         Node source = getNode(startNodeName);
         if (source == null) {
             System.out.println("El nodo inicial no existe.");
             return null;
         }
 
-        // 1. Estructuras de datos
-        Map<Node, Integer> distances = new HashMap<>(); // Distancias más cortas desde el source // Predecesores en el camino más corto
-        int numNodes = nodes.size();
-
-        // 2. Inicialización
-        // Distancia a todos es "Infinito", excepto el nodo de inicio (source)
+        Map<Node, Integer> distances = new HashMap<>();
+        Map<Node, Node> predecessors = new HashMap<>();
         for (Node node : nodes) {
             distances.put(node, Integer.MAX_VALUE);
             predecessors.put(node, null);
         }
-        distances.put(source, 0); // Distancia a sí mismo es 0
+        distances.put(source, 0);
 
-        // 3. Relajación (V-1 iteraciones)
-        // Repetimos el proceso V-1 veces (V = número de nodos)
+        int numNodes = nodes.size();
         for (int i = 1; i < numNodes; i++) {
-            boolean changedInThisIteration = false;
-            // En cada iteración, revisamos TODAS las aristas
             for (Edge edge : edges) {
-                Node u = edge.getFrom(); // Nodo origen
-                Node v = edge.getTo(); // Nodo destino
+                Node u = edge.getFrom();
+                Node v = edge.getTo();
                 int weight = edge.getWeight();
 
-                // Si 'u' es alcanzable (distancia no es infinito)
-                // Y encontramos un camino más corto a 'v' pasando por 'u'
-                if (distances.get(u) != Integer.MAX_VALUE && distances.get(u) + weight < distances.get(v)) { // Relajación 
-                    distances.put(v, distances.get(u) + weight);  // Actualizamos distancia
-                    predecessors.put(v, u); // Actualizamos predecesor
-                    changedInThisIteration = true; // Hubo un cambio en esta iteración
+                if (distances.get(u) != Integer.MAX_VALUE && distances.get(u) + weight < distances.get(v)) {
+                    distances.put(v, distances.get(u) + weight);
+                    predecessors.put(v, u);
                 }
-            }
-            
-            // Optimización: Si en una iteración completa no hubo cambios,
-            // ya encontramos los caminos más cortos y podemos parar.
-            if (!changedInThisIteration) {
-                // System.out.println("Terminación temprana en iteración: " + i);
-                break;
             }
         }
 
-        // 4. Detección de Ciclos Negativos
-        // Hacemos una iteración MÁS (la V-ésima iteración)
+        // Detección de ciclos negativos (opcional)
         for (Edge edge : edges) {
             Node u = edge.getFrom();
             Node v = edge.getTo();
             int weight = edge.getWeight();
 
-            // Si después de V-1 iteraciones, todavía podemos encontrar un camino más corto,
-            // significa que hay un ciclo de peso negativo.
             if (distances.get(u) != Integer.MAX_VALUE && distances.get(u) + weight < distances.get(v)) {
-                System.out.println("¡Ciclo de peso negativo detectado!");
-                // Opcionalmente, se podría marcar 'v' como inalcanzable o con -infinito
-                // distances.put(v, Integer.MIN_VALUE); 
-                break; // Un ciclo es suficiente para detenernos
+                System.out.println("¡Ciclo negativo detectado!");
             }
         }
 
         return distances;
-
     }
 
-    public Map<Node, Integer> dijkstra(String startNodeName, Map<Node, Node> predecessors) {
+    public Map<Node, Integer> dijkstra(String startNodeName) {
         Node source = getNode(startNodeName);
         if (source == null) {
             System.out.println("El nodo inicial no existe.");
@@ -187,67 +163,45 @@ public class Graph {
         }
 
         // 1. Estructuras de datos
-        // Guarda la distancia más corta encontrada *hasta ahora* desde source a cada nodo
         Map<Node, Integer> distances = new HashMap<>();
-        // Guarda el nodo "anterior" en el camino más corto
-        // Nodos para los que ya hemos encontrado la distancia final (visitados)
+        Map<Node, Node> predecessors = new HashMap<>();
         Set<Node> visited = new HashSet<>();
-        // Cola de prioridad para obtener siempre el nodo no visitado con la menor distancia
         PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(distances::get));
 
         // 2. Inicialización
-        // Distancia a todos es "Infinito", excepto el nodo de inicio (source)
         for (Node node : nodes) {
             distances.put(node, Integer.MAX_VALUE);
             predecessors.put(node, null);
         }
-        distances.put(source, 0); // Distancia a sí mismo es 0
+        distances.put(source, 0);
 
-        // 3. Empezar el algoritmo
         pq.add(source);
 
         while (!pq.isEmpty()) {
-            // 4. Obtener el nodo (u) no visitado con la menor distancia
             Node u = pq.poll();
-
-            // Si ya lo visitamos (encontramos su camino final), lo saltamos
-            if (visited.contains(u)) {
-                continue;
-            }
-            // Marcar como visitado (distancia final encontrada)
+            if (visited.contains(u)) continue;
             visited.add(u);
 
-            // 5. Relajación: Revisar todos los vecinos (v) de (u)
-            // (Buscamos todas las aristas que *salen* de u)
             for (Edge edge : edges) {
                 if (edge.getFrom().equals(u)) {
                     Node v = edge.getTo();
                     int weight = edge.getWeight();
 
-                    // Si v ya fue visitado (distancia final), no hay nada que hacer
-                    if (visited.contains(v)) {
-                        continue;
-                    }
+                    if (visited.contains(v)) continue;
 
-                    // 6. Calcular la nueva distancia a (v) pasando por (u)
                     int newDist = distances.get(u) + weight;
-
-                    // 7. Si es un camino más corto que el que teníamos...
                     if (newDist < distances.get(v)) {
-                        // Se actualzia la distancia y el predecesor
                         distances.put(v, newDist);
                         predecessors.put(v, u);
-                        
-                        // Se añade 'v' a la cola para procesarlo.
-                        // (Java PQ no tiene 'decreaseKey', pero re-añadir funciona
-                        // gracias al chequeo de 'visited' al inicio del bucle)
                         pq.add(v);
                     }
                 }
             }
         }
+
         return distances;
     }
+
 
     public void printResults(Map<Node, Integer> distances, Map<Node, Node> predecessors) {
         System.out.println("Distancias más cortas:");
@@ -255,7 +209,8 @@ public class Graph {
             int dist = distances.get(node);
             if (dist == Integer.MAX_VALUE) {
                 System.out.println("  " + node + ": Inalcanzable");
-            } else {
+            } 
+            else {
                 System.out.println("  " + node + ": " + dist);
             }
         }
@@ -298,6 +253,130 @@ public class Graph {
             }
         }
         System.out.println(); // Salto de línea
+    }
+
+    public Map<String, Object> floydWarshall() {
+        int n = nodes.size();
+        final int INF = 99999999; // "Infinito"
+
+        // Matrices de distancias y predecesores
+        int[][] dist = new int[n][n];
+        Node[][] next = new Node[n][n];
+
+        // Inicialización
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (i == j) dist[i][j] = 0;
+                else dist[i][j] = INF;
+                next[i][j] = null;
+            }
+        }
+
+        // Cargar las aristas
+        for (Edge e : edges) {
+            int u = e.getFrom().getId();
+            int v = e.getTo().getId();
+            dist[u][v] = e.getWeight();
+            next[u][v] = e.getTo();
+        }
+
+        // --- Algoritmo Floyd–Warshall ---
+        for (int k = 0; k < n; k++) {
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (dist[i][k] != INF && dist[k][j] != INF &&
+                        dist[i][k] + dist[k][j] < dist[i][j]) {
+
+                        dist[i][j] = dist[i][k] + dist[k][j];
+                        next[i][j] = next[i][k];
+                    }
+                }
+            }
+        }
+
+        // --- Detección de ciclos negativos ---
+        boolean hasNegativeCycle = false;
+        for (int i = 0; i < n; i++) {
+            if (dist[i][i] < 0) {
+                hasNegativeCycle = true;
+                System.out.println("¡Ciclo negativo detectado en el nodo " + nodes.get(i) + "!");
+            }
+        }
+
+        // Empaquetamos los resultados en un Map
+        Map<String, Object> result = new HashMap<>();
+        result.put("distances", dist);
+        result.put("next", next);
+        result.put("hasNegativeCycle", hasNegativeCycle);
+        return result;
+    }
+
+    public void printFloydResults(Map<String, Object> result) {
+        int[][] dist = (int[][]) result.get("distances");
+        Node[][] next = (Node[][]) result.get("next");
+        boolean hasNegativeCycle = (boolean) result.get("hasNegativeCycle");
+        int n = nodes.size();
+        final int INF = 99999999;
+
+        System.out.println("\n--- Resultados de Floyd–Warshall ---");
+
+        // Mostrar matriz de distancias
+        System.out.println("Matriz de distancias más cortas:");
+        System.out.print("      ");
+        for (Node node : nodes) {
+            System.out.printf("%6s", node.getName());
+        }
+        System.out.println();
+
+        for (int i = 0; i < n; i++) {
+            System.out.printf("%6s", nodes.get(i).getName());
+            for (int j = 0; j < n; j++) {
+                if (dist[i][j] == INF)
+                    System.out.printf("%6s", "∞");
+                else
+                    System.out.printf("%6d", dist[i][j]);
+            }
+            System.out.println();
+        }
+
+        if (!hasNegativeCycle) {
+            System.out.println("\nCaminos más cortos entre cada par de nodos:");
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (i != j && dist[i][j] != INF) {
+                        System.out.print("  " + nodes.get(i) + " → " + nodes.get(j) + " (Costo: " + dist[i][j] + "): ");
+                        printFloydPath(i, j, next);
+                        System.out.println();
+                    }
+                }
+            }
+        } else {
+            System.out.println("\nEl grafo contiene ciclos de peso negativo. Las distancias no son confiables.");
+        }
+
+        System.out.println("----------------------------------------------");
+    }
+
+    private void printFloydPath(int i, int j, Node[][] next) {
+        if (next[i][j] == null) {
+            System.out.print("No hay camino");
+            return;
+        }
+
+        List<Node> path = new ArrayList<>();
+        Node current = nodes.get(i);
+        path.add(current);
+
+        while (current != nodes.get(j)) {
+            current = next[current.getId()][j];
+            path.add(current);
+        }
+
+        for (int k = 0; k < path.size(); k++) {
+            System.out.print(path.get(k));
+            if (k < path.size() - 1)
+                System.out.print(" -> ");
+        }
     }
 
 }
