@@ -112,20 +112,15 @@ public class Graph {
         }
     }
 
-    public void bellmanFord(String startNodeName) {
-        bellmanFord(startNodeName, true);
-    }
-
-    public void bellmanFord(String startNodeName, boolean printResults) {
+    public Map<Node, Integer> bellmanFord(String startNodeName, Map<Node, Node> predecessors) {
         Node source = getNode(startNodeName);
         if (source == null) {
             System.out.println("El nodo inicial no existe.");
-            return;
+            return null;
         }
 
         // 1. Estructuras de datos
-        Map<Node, Integer> distances = new HashMap<>(); // Distancias más cortas desde el source
-        Map<Node, Node> predecessors = new HashMap<>(); // Predecesores en el camino más corto
+        Map<Node, Integer> distances = new HashMap<>(); // Distancias más cortas desde el source // Predecesores en el camino más corto
         int numNodes = nodes.size();
 
         // 2. Inicialización
@@ -165,7 +160,6 @@ public class Graph {
 
         // 4. Detección de Ciclos Negativos
         // Hacemos una iteración MÁS (la V-ésima iteración)
-        boolean negativeCycleFound = false;
         for (Edge edge : edges) {
             Node u = edge.getFrom();
             Node v = edge.getTo();
@@ -174,7 +168,6 @@ public class Graph {
             // Si después de V-1 iteraciones, todavía podemos encontrar un camino más corto,
             // significa que hay un ciclo de peso negativo.
             if (distances.get(u) != Integer.MAX_VALUE && distances.get(u) + weight < distances.get(v)) {
-                negativeCycleFound = true;
                 System.out.println("¡Ciclo de peso negativo detectado!");
                 // Opcionalmente, se podría marcar 'v' como inalcanzable o con -infinito
                 // distances.put(v, Integer.MIN_VALUE); 
@@ -182,54 +175,21 @@ public class Graph {
             }
         }
 
-        // 5. Mostrar resultados
-        if (printResults) {
-            System.out.println("--- Resultados de Bellman-Ford (desde " + source + ") ---");
-            if (negativeCycleFound) {
-            System.out.println("El grafo contiene un ciclo de peso negativo.");
-            System.out.println("Las distancias más cortas no están bien definidas (pueden ser -infinito).");
-            } 
-            else {
-                // Si no hay ciclos, mostramos los resultados (igual que en Dijkstra)
-                System.out.println("Distancias más cortas:");
-                for (Node node : nodes) {
-                    int dist = distances.get(node);
-                    if (dist == Integer.MAX_VALUE) {
-                        System.out.println("  " + node + ": Inalcanzable");
-                    } else {
-                        System.out.println("  " + node + ": " + dist);
-                    }
-                }
-                
-                System.out.println("\nCaminos más cortos:");
-                // Imprimir el camino a todos los demás nodos
-                for (Node node : nodes) {
-                    if (!node.equals(source)) {
-                        // Reutilizamos el método auxiliar de Dijkstra
-                        printShortestPath(node.getName(), predecessors, distances);
-                    }
-                }
-            }
-            System.out.println("----------------------------------------------");
-        }
+        return distances;
+
     }
 
-    public void dijkstra(String startNodeName) {
-        dijkstra(startNodeName, true);
-    }
-
-    public void dijkstra(String startNodeName, boolean printResults) {
+    public Map<Node, Integer> dijkstra(String startNodeName, Map<Node, Node> predecessors) {
         Node source = getNode(startNodeName);
         if (source == null) {
             System.out.println("El nodo inicial no existe.");
-            return;
+            return null;
         }
 
         // 1. Estructuras de datos
         // Guarda la distancia más corta encontrada *hasta ahora* desde source a cada nodo
         Map<Node, Integer> distances = new HashMap<>();
         // Guarda el nodo "anterior" en el camino más corto
-        Map<Node, Node> predecessors = new HashMap<>();
         // Nodos para los que ya hemos encontrado la distancia final (visitados)
         Set<Node> visited = new HashSet<>();
         // Cola de prioridad para obtener siempre el nodo no visitado con la menor distancia
@@ -286,27 +246,25 @@ public class Graph {
                 }
             }
         }
-        // 8. Mostrar resultados
-        if (printResults) {
-            System.out.println("--- Resultados de Dijkstra (desde " + source + ") ---");
-            System.out.println("Distancias más cortas:");
-            for (Node node : nodes) {
-                int dist = distances.get(node);
-                if (dist == Integer.MAX_VALUE) {
-                    System.out.println("  " + node + ": Inalcanzable");
-                } else {
-                    System.out.println("  " + node + ": " + dist);
-                }
+        return distances;
+    }
+
+    public void printResults(Map<Node, Integer> distances, Map<Node, Node> predecessors) {
+        System.out.println("Distancias más cortas:");
+        for (Node node : nodes) {
+            int dist = distances.get(node);
+            if (dist == Integer.MAX_VALUE) {
+                System.out.println("  " + node + ": Inalcanzable");
+            } else {
+                System.out.println("  " + node + ": " + dist);
             }
-            
-            System.out.println("\nCaminos más cortos:");
-            // Imprimir el camino a todos los demás nodos
-            for (Node node : nodes) {
-                if (!node.equals(source)) {
-                    printShortestPath(node.getName(), predecessors, distances);
-                }
+        }
+
+        System.out.println("\nCaminos más cortos:");
+        for (Node node : nodes) {
+            if (!node.equals(predecessors.get(node))) {
+                printShortestPath(node.getName(), predecessors, distances);
             }
-            System.out.println("----------------------------------------------");
         }
     }
 
