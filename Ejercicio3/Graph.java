@@ -107,8 +107,8 @@ public class Graph {
         }
 
         // 1. Estructuras de datos
-        Map<Node, Integer> distances = new HashMap<>();
-        Map<Node, Node> predecessors = new HashMap<>();
+        Map<Node, Integer> distances = new HashMap<>(); // Distancias más cortas desde el source
+        Map<Node, Node> predecessors = new HashMap<>(); // Predecesores en el camino más corto
         int numNodes = nodes.size();
 
         // 2. Inicialización
@@ -125,16 +125,16 @@ public class Graph {
             boolean changedInThisIteration = false;
             // En cada iteración, revisamos TODAS las aristas
             for (Edge edge : edges) {
-                Node u = edge.getFrom();
-                Node v = edge.getTo();
+                Node u = edge.getFrom(); // Nodo origen
+                Node v = edge.getTo(); // Nodo destino
                 int weight = edge.getWeight();
 
                 // Si 'u' es alcanzable (distancia no es infinito)
                 // Y encontramos un camino más corto a 'v' pasando por 'u'
-                if (distances.get(u) != Integer.MAX_VALUE && distances.get(u) + weight < distances.get(v)) {
-                    distances.put(v, distances.get(u) + weight);
-                    predecessors.put(v, u);
-                    changedInThisIteration = true;
+                if (distances.get(u) != Integer.MAX_VALUE && distances.get(u) + weight < distances.get(v)) { // Relajación 
+                    distances.put(v, distances.get(u) + weight);  // Actualizamos distancia
+                    predecessors.put(v, u); // Actualizamos predecesor
+                    changedInThisIteration = true; // Hubo un cambio en esta iteración
                 }
             }
             
