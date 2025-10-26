@@ -113,6 +113,10 @@ public class Graph {
     }
 
     public void bellmanFord(String startNodeName) {
+        bellmanFord(startNodeName, true);
+    }
+
+    public void bellmanFord(String startNodeName, boolean printResults) {
         Node source = getNode(startNodeName);
         if (source == null) {
             System.out.println("El nodo inicial no existe.");
@@ -179,36 +183,42 @@ public class Graph {
         }
 
         // 5. Mostrar resultados
-        System.out.println("--- Resultados de Bellman-Ford (desde " + source + ") ---");
-        if (negativeCycleFound) {
+        if (printResults) {
+            System.out.println("--- Resultados de Bellman-Ford (desde " + source + ") ---");
+            if (negativeCycleFound) {
             System.out.println("El grafo contiene un ciclo de peso negativo.");
             System.out.println("Las distancias más cortas no están bien definidas (pueden ser -infinito).");
-        } 
-        else {
-            // Si no hay ciclos, mostramos los resultados (igual que en Dijkstra)
-            System.out.println("Distancias más cortas:");
-            for (Node node : nodes) {
-                int dist = distances.get(node);
-                if (dist == Integer.MAX_VALUE) {
-                    System.out.println("  " + node + ": Inalcanzable");
-                } else {
-                    System.out.println("  " + node + ": " + dist);
+            } 
+            else {
+                // Si no hay ciclos, mostramos los resultados (igual que en Dijkstra)
+                System.out.println("Distancias más cortas:");
+                for (Node node : nodes) {
+                    int dist = distances.get(node);
+                    if (dist == Integer.MAX_VALUE) {
+                        System.out.println("  " + node + ": Inalcanzable");
+                    } else {
+                        System.out.println("  " + node + ": " + dist);
+                    }
+                }
+                
+                System.out.println("\nCaminos más cortos:");
+                // Imprimir el camino a todos los demás nodos
+                for (Node node : nodes) {
+                    if (!node.equals(source)) {
+                        // Reutilizamos el método auxiliar de Dijkstra
+                        printShortestPath(node.getName(), predecessors, distances);
+                    }
                 }
             }
-            
-            System.out.println("\nCaminos más cortos:");
-            // Imprimir el camino a todos los demás nodos
-            for (Node node : nodes) {
-                if (!node.equals(source)) {
-                    // Reutilizamos el método auxiliar de Dijkstra
-                    printShortestPath(node.getName(), predecessors, distances);
-                }
-            }
+            System.out.println("----------------------------------------------");
         }
-        System.out.println("----------------------------------------------");
     }
 
     public void dijkstra(String startNodeName) {
+        dijkstra(startNodeName, true);
+    }
+
+    public void dijkstra(String startNodeName, boolean printResults) {
         Node source = getNode(startNodeName);
         if (source == null) {
             System.out.println("El nodo inicial no existe.");
@@ -277,25 +287,27 @@ public class Graph {
             }
         }
         // 8. Mostrar resultados
-        System.out.println("--- Resultados de Dijkstra (desde " + source + ") ---");
-        System.out.println("Distancias más cortas:");
-        for (Node node : nodes) {
-            int dist = distances.get(node);
-            if (dist == Integer.MAX_VALUE) {
-                System.out.println("  " + node + ": Inalcanzable");
-            } else {
-                System.out.println("  " + node + ": " + dist);
+        if (printResults) {
+            System.out.println("--- Resultados de Dijkstra (desde " + source + ") ---");
+            System.out.println("Distancias más cortas:");
+            for (Node node : nodes) {
+                int dist = distances.get(node);
+                if (dist == Integer.MAX_VALUE) {
+                    System.out.println("  " + node + ": Inalcanzable");
+                } else {
+                    System.out.println("  " + node + ": " + dist);
+                }
             }
-        }
-        
-        System.out.println("\nCaminos más cortos:");
-        // Imprimir el camino a todos los demás nodos
-        for (Node node : nodes) {
-            if (!node.equals(source)) {
-                printShortestPath(node.getName(), predecessors, distances);
+            
+            System.out.println("\nCaminos más cortos:");
+            // Imprimir el camino a todos los demás nodos
+            for (Node node : nodes) {
+                if (!node.equals(source)) {
+                    printShortestPath(node.getName(), predecessors, distances);
+                }
             }
+            System.out.println("----------------------------------------------");
         }
-        System.out.println("----------------------------------------------");
     }
 
     private void printShortestPath(String endNodeName, Map<Node, Node> predecessors, Map<Node, Integer> distances) {
