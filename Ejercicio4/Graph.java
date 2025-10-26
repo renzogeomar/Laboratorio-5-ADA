@@ -29,10 +29,19 @@ public class Graph {
 
 
     public void addNode(String name) {
-        Node node = new Node(name);
-        if (!nodes.contains(node)) {
-            nodes.add(node);
+        // 1. Revisar si ya existe por nombre
+        if (getNode(name) != null) {
+            return;
         }
+        
+        // 2. Asignar un ID único (el tamaño actual de la lista)
+        int newId = nodes.size(); 
+        
+        // 3. Crear el nodo con nombre e ID
+        Node node = new Node(name, newId); 
+        
+        // 4. Añadirlo
+        nodes.add(node);
     }
 
     public void addEdge(String from, String to, int weight) {
